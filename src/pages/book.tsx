@@ -358,10 +358,13 @@ export default function Book() {
   }
 
   const createBookingMutation = trpc.bookings.create.useMutation({
-    onError: (err) => {
-      setApiError(err.message);
-      toast.error("Failed to create booking. Please try again.");
-    },
+      onError: (err) => {
+        const message = err instanceof Error && err.message.trim()
+          ? err.message
+          : "The booking service returned an empty response. Please try again.";
+        setApiError(message);
+        toast.error(message);
+      },
   });
   const createPaymentIntentMutation = trpc.bookings.createPaymentIntent.useMutation();
   const updatePaymentMutation = trpc.bookings.updatePayment.useMutation();
@@ -637,16 +640,25 @@ export default function Book() {
         });
         trackEvent("payment_intent_created", { amount: result.amount });
       } catch (stripeErr: any) {
-        // Stripe not configured — show fallback card form on the payment step
-        console.warn("Stripe not configured, using fallback payment form:", stripeErr.message);
+        // Stripe not configured — show fallback card form on the payment step.
+        // Keep the booking and move forward so the customer is never stuck.
+        const message = stripeErr instanceof Error && stripeErr.message.trim()
+          ? stripeErr.message
+          : "Online payment is temporarily unavailable.";
+        console.warn("Stripe payment setup unavailable:", message);
         setStripeAvailable(false);
+        toast.info("Your booking was saved. You can continue with the payment step.");
       }
       // Always navigate to payment step so the card form is visible
       handleStepChange("payment");
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err: any) {
-      setApiError(err.message);
-      trackEvent("booking_error", { error: err.message });
+      const message = err instanceof Error && err.message.trim()
+        ? err.message
+        : "We could not save your booking. Please check your connection and try again.";
+      setApiError(message);
+      toast.error(message);
+      trackEvent("booking_error", { error: message });
     } finally {
       setIsCreatingIntent(false);
     }

@@ -19,7 +19,20 @@ const trpcClient = trpc.createClient({
       url: apiBase,
       transformer: superjson,
       fetch(input, init) {
-        return globalThis.fetch(input, { ...(init ?? {}), credentials: "include" });
+        return globalThis.fetch(input, { ...(init ?? {}), credentials: "include" }).then(async response => {
+          if (response.ok) return response;
+          const raw = await response.text();
+          let message = `Request failed (${response.status})`;
+          if (raw.trim()) {
+            try {
+              const payload = JSON.parse(raw) as { error?: { json?: { message?: string }; message?: string } };
+              message = payload.error?.json?.message ?? payload.error?.message ?? raw;
+            } catch {
+              message = raw.slice(0, 240);
+            }
+          }
+          throw new Error(message);
+        });
       },
     }),
   ],
