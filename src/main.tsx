@@ -8,6 +8,16 @@ import "./index.css";
 
 const queryClient = new QueryClient();
 
+// Chromium reports this benign warning when a responsive component settles
+// across multiple layout frames. It is not an application failure, so keep it
+// out of the preview error surface without hiding unrelated runtime errors.
+window.addEventListener("error", (event) => {
+  if (event.message === "ResizeObserver loop completed with undelivered notifications.") {
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  }
+});
+
 // VITE_TRPC_URL overrides the default (set to /trpc on Netlify, or any external URL)
 const apiBase =
   import.meta.env.VITE_TRPC_URL ||
