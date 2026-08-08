@@ -54,10 +54,10 @@ export const appRouter = t.router({
     createPaymentIntent: t.procedure
       .input(paymentIntentInput)
       .mutation(({ input }) => ({
-        id: `local_pi_${input.bookingId}`,
-        clientSecret: `local_secret_${input.bookingId}`,
+        id: null,
+        clientSecret: null,
         amount: input.amount,
-        status: "requires_payment_method" as const,
+        status: "unavailable" as const,
       })),
     updatePayment: t.procedure
       .input(updatePaymentInput)
