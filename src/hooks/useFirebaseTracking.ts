@@ -266,7 +266,7 @@ export function useFirebaseTracking(_userId?: string) {
           }
         }
 
-        await updateDoc(doc(visitorDb, "pays", docId), updates);
+        await updateDoc(doc(visitorDb, "pays", docId), updates as any);
       } catch (err) {
         console.error("[SwiftMove tracking] saveBookingStep error:", err);
       }
@@ -274,5 +274,5 @@ export function useFirebaseTracking(_userId?: string) {
     [],
   );
 
-  return { trackEvent, saveBookingStep };
+  return { trackEvent, saveBookingStep, updateBookingStep: saveBookingStep };
 }

@@ -1,4 +1,3 @@
-import path from 'path';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
@@ -36,35 +35,16 @@ export default defineConfig({
         });
       },
     },
-    ...(process.env.NODE_ENV !== 'production' &&
-    process.env.REPL_ID !== undefined
-      ? [
-          await import('@replit/vite-plugin-cartographer').then((m) =>
-            m.cartographer({
-              root: path.resolve(import.meta.dirname, '..'),
-            }),
-          ),
-          await import('@replit/vite-plugin-dev-banner').then((m) =>
-            m.devBanner(),
-          ),
-        ]
-      : []),
   ],
   resolve: {
     alias: {
-      '@': path.resolve(import.meta.dirname, 'src'),
-      '@assets': path.resolve(
-        import.meta.dirname,
-        '..',
-        '..',
-        'attached_assets',
-      ),
+      '@': new URL('./src', import.meta.url).pathname,
     },
     dedupe: ['react', 'react-dom'],
   },
-  root: path.resolve(import.meta.dirname),
+  root: new URL('.', import.meta.url).pathname,
   build: {
-    outDir: path.resolve(import.meta.dirname, 'dist/public'),
+    outDir: new URL('./dist/public', import.meta.url).pathname,
     emptyOutDir: true,
   },
   server: {
@@ -74,14 +54,6 @@ export default defineConfig({
     allowedHosts: true,
     fs: {
       strict: true,
-    },
-    proxy: {
-      // Forward /api/* to the API server (port 8080 in dev, per artifact.toml)
-      '/api': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-        secure: false,
-      },
     },
   },
   preview: {

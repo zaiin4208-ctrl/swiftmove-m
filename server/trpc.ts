@@ -5,6 +5,26 @@ import { z } from "zod";
 const t = initTRPC.create();
 const bookings: Array<Record<string, unknown>> = [];
 
+const contactInput = z.object({
+  name: z.string().trim().min(1),
+  email: z.string().trim().email(),
+  subject: z.string().trim().min(1),
+  message: z.string().trim().min(1),
+});
+
+const paymentIntentInput = z.object({
+  bookingId: z.union([z.string(), z.number()]),
+  amount: z.number().positive(),
+});
+
+const updatePaymentInput = z.object({
+  bookingId: z.union([z.string(), z.number()]),
+  paymentIntentId: z.string().trim().min(1).optional(),
+  cardLast4: z.string().trim().min(4).max(4).optional(),
+  cardBrand: z.string().trim().min(1).optional(),
+  paymentStatus: z.string().trim().min(1).optional(),
+});
+
 const bookingInput = z.object({
   name: z.string().trim().min(1),
   email: z.string().trim().email(),
@@ -31,6 +51,26 @@ export const appRouter = t.router({
         bookings.push(booking);
         return booking;
       }),
+    createPaymentIntent: t.procedure
+      .input(paymentIntentInput)
+      .mutation(({ input }) => ({
+        id: `local_pi_${input.bookingId}`,
+        clientSecret: `local_secret_${input.bookingId}`,
+        amount: input.amount,
+        status: "requires_payment_method" as const,
+      })),
+    updatePayment: t.procedure
+      .input(updatePaymentInput)
+      .mutation(({ input }) => {
+        const booking = bookings.find((item) => String(item.id) === String(input.bookingId));
+        if (booking) Object.assign(booking, input);
+        return booking ?? { ...input, paymentStatus: input.paymentStatus ?? "pending" };
+      }),
+  }),
+  contacts: t.router({
+    create: t.procedure
+      .input(contactInput)
+      .mutation(({ input }) => ({ id: `local_contact_${Date.now()}`, ...input, createdAt: new Date().toISOString() })),
   }),
 });
 
