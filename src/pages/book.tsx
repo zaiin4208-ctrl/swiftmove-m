@@ -559,6 +559,13 @@ export default function Book() {
 
   async function onSubmit(values: FormValues) {
     if (!selectedPackage) return;
+
+    const dateValue = values.date.trim();
+    const timeValue = values.time.trim();
+    if (!dateValue || !timeValue) {
+      toast.error("Please choose your moving date and preferred time.");
+      return;
+    }
     const depositAmount = normalizeDepositAmount(selectedPackage.deposit);
     if (!depositAmount) {
       setApiError("The selected package has an invalid deposit amount. Please choose the package again.");
@@ -570,14 +577,29 @@ export default function Book() {
     const fromAddress = buildAddress(values.fromLine1, values.fromLine2, values.fromCity, values.fromPostcode);
     const toAddress = buildAddress(values.toLine1, values.toLine2, values.toCity, values.toPostcode);
     try {
+      const bookingPayload = {
+        name: values.name.trim(),
+        email: values.email.trim().toLowerCase(),
+        phone: values.phone.trim(),
+        postcode: values.fromPostcode.trim().toUpperCase(),
+        moveDate: dateValue,
+        moveTime: timeValue,
+        propertySize: selectedPackage.label.trim(),
+        packageLabel: selectedPackage.label.trim(),
+        fromAddress,
+        toAddress,
+        notes: (values.requirements ?? "").trim(),
+        depositAmount,
+      };
+
       // Save booking details to Firebase before submission
       await saveBookingStep("details_filled", {
         name: values.name,
         email: values.email,
         phone: values.phone,
         postcode: values.fromPostcode,
-        moveDate: values.date,
-        moveTime: values.time,
+        moveDate: dateValue,
+        moveTime: timeValue,
         fromAddress,
         toAddress,
         fromLine1: values.fromLine1,
@@ -595,20 +617,7 @@ export default function Book() {
       });
 
       // Save booking to database and send Telegram notification
-      const bookingResult = await createBookingMutation.mutateAsync({
-        name: values.name,
-        email: values.email,
-        phone: values.phone,
-        postcode: values.fromPostcode,
-        moveDate: values.date,
-        moveTime: values.time,
-        propertySize: selectedPackage.label,
-        packageLabel: selectedPackage.label,
-        fromAddress,
-        toAddress,
-        notes: values.requirements ?? "",
-        depositAmount,
-      });
+      const bookingResult = await createBookingMutation.mutateAsync(bookingPayload);
       const { bookingId: createdBookingId, amount: verifiedAmount } = resolveBookingPaymentContext(
         bookingResult,
         depositAmount,

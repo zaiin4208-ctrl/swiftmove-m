@@ -5,16 +5,27 @@ import { z } from "zod";
 const t = initTRPC.create();
 const bookings: Array<Record<string, unknown>> = [];
 
+const bookingInput = z.object({
+  name: z.string().trim().min(1),
+  email: z.string().trim().email(),
+  phone: z.string().trim().min(1),
+  postcode: z.string().trim().min(1),
+  moveDate: z.string().trim().min(1),
+  moveTime: z.string().trim().min(1),
+  propertySize: z.string().trim().min(1),
+  packageLabel: z.string().trim().min(1),
+  fromAddress: z.string().trim().min(1),
+  toAddress: z.string().trim().min(1),
+  notes: z.string().optional().default(""),
+  depositAmount: z.number().positive(),
+  cardLast4: z.string().optional(),
+  cardBrand: z.string().optional(),
+});
+
 export const appRouter = t.router({
   bookings: t.router({
     create: t.procedure
-      .input(z.object({
-        name: z.string().min(1), email: z.string().email(), phone: z.string().min(1),
-        postcode: z.string().min(1), moveDate: z.string().optional(), moveTime: z.string().optional(),
-        propertySize: z.string().min(1), packageLabel: z.string().min(1), fromAddress: z.string().optional(),
-        toAddress: z.string().optional(), notes: z.string().optional(), depositAmount: z.number().positive(),
-        cardLast4: z.string().optional(), cardBrand: z.string().optional(),
-      }))
+      .input(bookingInput)
       .mutation(({ input }) => {
         const booking = { id: bookings.length + 1, ...input, paymentStatus: "pending", status: "new", createdAt: new Date().toISOString() };
         bookings.push(booking);
