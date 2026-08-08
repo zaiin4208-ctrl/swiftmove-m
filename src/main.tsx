@@ -18,9 +18,11 @@ window.addEventListener("error", (event) => {
 });
 
 // VITE_TRPC_URL overrides the default (set to /trpc on Netlify, or any external URL)
+const configuredApiBase = String(import.meta.env.VITE_TRPC_URL ?? "").trim();
 const apiBase =
-  import.meta.env.VITE_TRPC_URL ||
-  `${window.location.origin}/trpc`;
+  configuredApiBase && !/localhost|127\.0\.0\.1|api-server|replit\.dev/i.test(configuredApiBase)
+    ? configuredApiBase.replace(/\/$/, "")
+    : `${window.location.origin}/trpc`;
 
 const trpcClient = trpc.createClient({
   links: [
